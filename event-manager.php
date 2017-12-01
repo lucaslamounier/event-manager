@@ -59,6 +59,11 @@ class Event_manager {
     add_action("wp_ajax_check_participante", array($this,'check_participante'));
     add_action("wp_ajax_nopriv_check_participante", array($this,'check_participante'));
 
+    /* Action para o envio de formulário de submissão de trabalhos, parte 2 */
+    add_action("wp_ajax_send_trabalho", array($this,'receive_trabalho'));
+    add_action("wp_ajax_nopriv_send_trabalho", array($this,'receive_trabalho'));
+
+
     // Ajax para a palestrantes
     add_action("wp_ajax_form_palestrante", array($this,'form_palestrante'));
 
@@ -123,7 +128,7 @@ class Event_manager {
       return $page_template;
   }
 
-  public function altera_rodape(){
+   public function altera_rodape(){
       //echo "©2017 Ministério dos Transportes | Todos os direitos reservados New";
     load_template(dirname( __FILE__ )  . '/templates/footer2.php');
   }
@@ -158,7 +163,6 @@ class Event_manager {
       }else{
         wp_die(0);
       }
-
   }
 
   /* Lógica do submit de inscrição de palestrante */
@@ -191,10 +195,8 @@ class Event_manager {
                         "is_palestrante" => 1
           );
 
-          $existParticipante = $this->checkExistsParticipante($cpf, $email);
 	  
-	        $existParticipanteCpf =  $this->checkExistsParticipanteCpf($cpf);
-	  	
+	        $existParticipanteCpf =  $this->checkExistsParticipanteCpf($cpf);	  	
 		      $existParticipanteEmail =  $this->checkExistsParticipanteEmail($email);
 	  
           if(!$existParticipanteCpf && !$existParticipanteEmail){
@@ -208,9 +210,12 @@ class Event_manager {
                   // Ocorreu um erro ao realizar o cadastro do participante
                   wp_die("0");
               }
+          
           }else if(!$existParticipanteEmail && $existParticipanteCpf){
-			  	wp_die("4");
-		  }else {
+			  	
+                wp_die("4");
+		      
+          }else {
                 // Participante já inscrito no evento
                 wp_die("2");
           }
@@ -242,22 +247,6 @@ class Event_manager {
 
           } else if (!empty($captcha)) {
 
-             /* if(intval($possui_artigo) === 1 ){
-
-                if(isset($_FILES['file-artigo'])){
-
-                    $file = wp_upload_bits( $_FILES['file-artigo']['name'], null, @file_get_contents( $_FILES['file-artigo']['tmp_name'] ) );
-
-                    if ($file['error']){
-                        die("0");
-                    }else{
-                      // Upload foi realizado com sucesso.
-                      $file_path = $file["url"];
-                      $data_envio_artigo = $this->getDatetimeNow();
-                    }
-                }
-              } */
-
               $dados = array("nome" => $nome, "email" => $email, "cpf" => $cpf,
                       "telefone" => $telefone, "empresa" => $empresa,
                       "cargo" => $cargo, "possui_artigo" => $possui_artigo,
@@ -268,34 +257,34 @@ class Event_manager {
               );
 
 
-               $existParticipante = $this->checkExistsParticipante($cpf, $email);
+              $existParticipante = $this->checkExistsParticipante($cpf, $email);
 			  
-			   $existParticipanteCpf =  $this->checkExistsParticipanteCpf($cpf);
+			        $existParticipanteCpf =  $this->checkExistsParticipanteCpf($cpf);
 	  	
-		       $existParticipanteEmail =  $this->checkExistsParticipanteEmail($email);
+		          $existParticipanteEmail =  $this->checkExistsParticipanteEmail($email);
 
               if(!$existParticipanteCpf && !$existParticipanteEmail){
                   
                     $resultado = $this->insertParticipante($dados);
 				    
-				    $enviou_email = $this->deliver_mail($email);
+				            $enviou_email = $this->deliver_mail($email);
               
                     if($resultado && $enviou_email){
                        // Participante cadastrado com sucesso.
                        wp_die("1");
                     }else if($resultado && !$enviou_email){
-						$this->deliver_mail($email);
-						wp_die("1");
-					}else{
-                        // Ocorreu um erro ao realizar o cadastro do participante
-                        wp_die("0");
+						          $this->deliver_mail($email);
+						          wp_die("1");
+      					    }else{
+                          // Ocorreu um erro ao realizar o cadastro do participante
+                          wp_die("0");
                     }
 
               }else if($existParticipanteCpf && !$existParticipanteEmail){
-				   wp_die("4");
-			  }else {
+				            wp_die("4");
+
+      			  }else {
                     // Participante já inscrito no evento
-                   //die("2");
                     wp_die("2");
               }
 
@@ -303,6 +292,89 @@ class Event_manager {
         } // End Else recaptcha
          
   } // End form_inscricao
+
+  /* Action do formulário de submissão de trabalhos */
+  public function receive_trabalho(){
+
+      $email   = sanitize_email( $_POST["email"] );
+      $cpf  = $this->limpaCPF_CNPJ($_POST["cpf"]);
+      $file_uploaded = $_FILES["artigo"];
+      $accept_terms = $_POST["accept-terms"];
+      $tipo_trabalho = $_POST["tipoTrabalho"];
+
+      if(isset($_POST['g-recaptcha-response'])){
+        $captcha = $_POST['g-recaptcha-response'];
+      }
+
+      if(isset($file_uploaded)){
+
+          $file = wp_upload_bits($file_uploaded['name'], null, 
+                      @file_get_contents($file_uploaded['tmp_name'] ) );
+
+          if ($file['error']){
+              wp_die("-1");
+          }else{
+            // Upload foi realizado com sucesso.
+            $file_path = $file["url"];
+            $data_envio_artigo = $this->getDatetimeNow();
+          }
+      }
+
+
+      if(!empty($captcha) && !empty($file_path)){
+         
+
+          $check_uploaded_file = $this->checkUpdatedFile($email, $cpf);
+
+          if($check_uploaded_file && $check_uploaded_file["possui_artigo"] == 1 && !empty($check_uploaded_file["url_artigo"])){
+
+            wp_die("2"); // participante ja realizou envio de trabalho
+          }else if($check_uploaded_file && $check_uploaded_file["possui_artigo"] == 0 && empty($check_uploaded_file["url_artigo"])){
+
+              $dados = array("email" => $email, "cpf" => $cpf,
+                      "possui_artigo" => 1, "data_envio_artigo" => $data_envio_artigo,
+                      "url_artigo" => $file_path, "tipo_trabalho" => $tipo_trabalho,
+                      "id" => $check_uploaded_file["id"]
+              );
+
+              $update = $this->atualizaParticipante($dados);
+
+              if($update){
+                wp_die("1"); // tudo certo
+              }else{
+                wp_die("3"); //
+              }
+
+          }else{
+
+              wp_die("0"); // Ocorreu algum erro
+
+          }
+
+      }else{
+        wp_die("4"); // recaptcha nao marcado
+      }
+  }
+
+  public function atualizaParticipante($dados){
+
+      $sql = "UPDATE `".Event_manager::$wpdb->prefix."participante_evento`
+            SET 
+            `possui_artigo` = 1,
+            `url_artigo` = ".$dados["url_artigo"].",
+            `data_envio_artigo` = ".$dados["data_envio_artigo"].",
+            `tipo_trabalho` = ".$dados["tipo_trabalho"]."
+            WHERE `id` = ".$dados["tipo_trabalho"];
+
+      $update = $this::$wpdb->query($sql);
+      
+      if($update){
+          return true;
+      }else{
+          return false;
+      }
+  }
+
 	
 	/* Função para envio de email */
 	public function deliver_mail($email) {
@@ -335,116 +407,6 @@ class Event_manager {
  		return $valor;
 	}
 
- 
- 
-	public function form_submit() {
-
-    	if (isset( $_POST['cf-submitted'] ) ) {       	
-          // sanitize form values
-	        $nome    = sanitize_text_field( $_POST["nome"] );
-          $email   = sanitize_email( $_POST["email"] );
-          $cpf   = sanitize_text_field( $_POST["cpf"] );
-          $telefone   = sanitize_text_field( $_POST["telefone"] );
-          $empresa = sanitize_text_field( $_POST["empresa"] );
-          $cargo = sanitize_text_field( $_POST["cargo"] );
-          $possui_artigo = (int) $_POST["AnwaserEnviarArtigo"];
-          $file = $_FILES["file-artigo"];
-
-
-          $file_path = NULL;
-          $data_envio_artigo = NULL;
-          $data_inscricao = Event_manager::getDatetimeNow();
-
-          if(intval($possui_artigo) === 1 ){
-
-                if(isset($_FILES['file-artigo'])){
-
-                    $file = wp_upload_bits( $_FILES['file-artigo']['name'], null, @file_get_contents( $_FILES['file-artigo']['tmp_name'] ) );
-
-                    if ($file['error']){
-                      	echo "<div> 
-                      		<strong>
-                      			Ocorreu um erro ao fazer upload do arquivo  </ strong>
-                      	</div>";
-                    }else{
-                    	// Upload foi realizado com sucesso.
-	                    $file_path = $file["url"];
-	                    $data_envio_artigo = $this->getDatetimeNow();
-                    }
-                }
-          }
-
-          $dados = array(
-                  "nome" => $nome,
-                  "email" => $email,
-                  "cpf" => $cpf,
-                  "telefone" => $telefone,
-                  "empresa" => $empresa,
-                  "cargo" => $cargo,
-                  "possui_artigo" => $possui_artigo,
-                  "data_envio_artigo" => $data_envio_artigo,
-                  "url_artigo" => $file_path,
-                  "data_inscricao" => $data_inscricao,
-                  "is_palestrante" => 0
-          );
-
-          $existParticipante = $this->checkExistsParticipante($cpf, $email);
-		
-		      $existParticipanteCpf =  $this->checkExistsParticipanteCpf($cpf);
-	  	
-		      $existParticipanteEmail =  $this->checkExistsParticipanteEmail($email);
-
-          if(!$existParticipanteCpf &&  !$existParticipanteEmail){
-          		
-			    $resultado = $this->insertParticipante($dados);
-          
-		        if($resultado){
-		         	 $_POST = array();
-		             header("Location: sucesso-inscricao");
-
-		        }else{
-		             echo "Ocorreu um erro ao realizar o cadastro do participante, por favor contate o administrador !";
-		        }
-
-          }else if($existParticipanteCpf &&  !$existParticipanteEmail){
-			   
-			   wp_die("4");
-			   
-			   
-		   }else {
-
-          		$_POST = array();
-
-          		echo '<div>
-						<h3 style="color: red; text-align: center;""> 
-							Atenção ! Participante já inscrito no evento.
-						</h3>
-          		</div>';
-          		return;
-          }
-          
-
-	        // get the blog administrator's email address
-	        //$to = get_option( 'admin_email' );
-
-	        //$headers = "From: $name <$email>" . "\r\n";
-
-	        // If email has been process for sending, display a success message
-	        /*if ( wp_mail( $to, $subject, $message, $headers ) ) {
-	            echo '<div>';
-	            echo '<p>Thanks for contacting me, expect a response soon.</p>';
-	            echo '</div>';
-	        } else {
-	            echo 'An unexpected error occurred';
-	        }*/
-	    }else {
-	       //$url = esc_url( $_SERVER['REQUEST_URI'] );
-           //return  header("Location: $url");
-
-      }
-   
-   }
-
   public function checkExistsParticipante($cpf, $email){
   		$sql = "SELECT * FROM `".Event_manager::$wpdb->prefix."participante_evento` WHERE cpf = '$cpf' AND email = '$email';";
         $count = $this::$wpdb->query($sql);
@@ -455,6 +417,12 @@ class Event_manager {
   		$sql = "SELECT * FROM `".Event_manager::$wpdb->prefix."participante_evento` WHERE email = '$email';";
         $count = $this::$wpdb->query($sql);
   		return ($count != 0) ? true : false;
+  }
+
+
+  public function checkUpdatedFile($email, $cpf){
+      $sql = "SELECT * FROM `".Event_manager::$wpdb->prefix."participante_evento` WHERE email = '$email' and cpf = '$cpf';";
+      return $wpdb->get_row($sql);
   }
   
   public function checkExistsParticipanteCpf($cpf){
@@ -567,6 +535,7 @@ class Event_manager {
     					  `possui_artigo` TINYINT NULL DEFAULT 0,
     					  `url_artigo` VARCHAR(45) NULL,
     					  `data_envio_artigo` DATETIME NULL,
+                `tipo_trabalho` VARCHAR(50) NULL,
      						 PRIMARY KEY (`id`))";
     		Event_manager::$wpdb->query($sql);
 
