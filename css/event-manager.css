@@ -229,6 +229,7 @@ div.schedule__btns > a.btn.btn_6 {
     display: table;
     width: 100%;
     position: relative;
+    padding-bottom: 40px;
 }
 
 .stepwizard-step button[disabled] {
@@ -237,7 +238,8 @@ div.schedule__btns > a.btn.btn_6 {
 }
 
 .stepwizard-row:before {
-    top: 14px;
+    top: 65px;
+    /*top: 14px;*/
     bottom: 0;
     position: absolute;
     content: " ";
@@ -259,6 +261,15 @@ div.schedule__btns > a.btn.btn_6 {
     text-align: center !important;
 }
 
+.margin-bottom-title{
+    margin-bottom: 35px;
+}
+
+.panel-subtile{
+    font-weight: bold;
+    font-size: 14px;
+}
+
 .btn-circle {
   width: 30px;
   height: 30px;
@@ -275,4 +286,10 @@ div.schedule__btns > a.btn.btn_6 {
 
 .site__increase{
     display: none;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #00a597 !important;
+    border-color: #00a597 !important;
 }

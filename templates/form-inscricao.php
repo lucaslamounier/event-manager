@@ -64,11 +64,11 @@
                                        <div class="row">
                                            <div class="col-md-6 col-xs-12">
                                             <label for="empresa " class="custom-label-form">Empresa</label>
-                                       <input type="text" class="form-control" id="empresa" name="empresa" size="100">
+                                    <input type="text" class="form-control" id="empresa" name="empresa" size="100" required>
                                            </div>
                                            <div class="col-md-6 col-xs-12">
                                                <label for="cargo" class="custom-label-form">Cargo</label>
-                                               <input type="text" class="form-control" id="cargo" name="cargo" size="100">
+                                    <input type="text" class="form-control" id="cargo" name="cargo" size="100" required>
                                            </div>
 
                                        </div>

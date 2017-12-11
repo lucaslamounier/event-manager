@@ -11,7 +11,7 @@
     <li class="active"><a data-toggle="tab" href="#home">Inscritos no evento</a></li>
     <li><a data-toggle="tab" href="#menu1">Cadastrar Palestrante</a></li>
     <li><a data-toggle="tab" href="#menu2">Trabalhos Enviados</a></li>
-    <li><a data-toggle="tab" href="#menu3">Check-in</a></li>
+   <!-- <li><a data-toggle="tab" href="#menu3">Check-in</a></li> -->
   </ul>
 
   <div class="tab-content">
@@ -32,7 +32,12 @@
        ?>
     </div>
     <div id="menu2" class="tab-pane fade">
-      <h3>Trabalhos enviados</h3>
+      <?php 
+
+        $dir = plugin_dir_path( __FILE__ );
+        load_template($dir.'/admin_trabalhos_enviados.php');
+
+       ?>
     </div>
     <div id="menu3" class="tab-pane fade">
       <h3>Check-In</h3>

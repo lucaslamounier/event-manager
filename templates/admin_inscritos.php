@@ -20,7 +20,7 @@
       <?php 
             global $wpdb;
 
-              $resultados = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}participante_evento order by nome;" );
+              $resultados = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}participante_evento order by data_inscricao;" );
 
              if(count($resultados) < 1){
 
@@ -51,7 +51,7 @@
                                 <td>".$res->cargo."</td>
                                 <td>".$has_palestrante."</td>
                                 <td>".$has_artigo ."</td>
-								<td>".date("d/m/Y H:m:s", strtotime($res->data_inscricao))."</td>
+								                <td>".date("d/m/Y H:m:s", strtotime($res->data_inscricao))."</td>
                             </tr>
                       ";
                   }

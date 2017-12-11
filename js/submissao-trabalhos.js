@@ -61,18 +61,35 @@ jQuery(document).ready(function() {
         data.append("email", email);
         data.append("cpf", cpf);
 
+        jQuery("#formulario-body").hide();
+        jQuery("#img-load").show();
+
         jQuery.ajax({
             type: "POST",
-            url: eventManagerJS.ajaxurl,
+            url: trabalhosJS.ajaxurl,
             contentType: false,
             processData: false,
             enctype: "multipart/form-data",
             data: data,
             success: function(data, textStatus, XMLHttpRequest) {
-                debugger;
+                if(data == 1){
+                    jQuery("#img-load").hide();
+                    jQuery("#success").show();   
+                }else if(data == 2){
+                    jQuery("#img-load").hide();
+                    jQuery("#userExists").show();    
+                }else if(data == 3){
+                    jQuery("#img-load").hide();
+                    jQuery("#msg-erro").show();    
+                }else if(data == 4){
+                    jQuery("#img-load").hide();
+                    jQuery("#msg-erro-email").show();
+                }
             },
             error: function(MLHttpRequest, textStatus, errorThrown) {
-                debugger;
+                jQuery("#img-load").hide();
+                jQuery("#msg-erro").show();
+                console.error(errorThrown);   
             }
         });
     });
